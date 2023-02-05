@@ -9,6 +9,6 @@ pub enum MalType {
     String(String),
     List(Vec<MalType>),
     // Keyword(String),
-    // Vector(Vec<MalType>),
+    Vector(Vec<MalType>),
     // HashMap(HashMap<MalType, MalType>),
 }

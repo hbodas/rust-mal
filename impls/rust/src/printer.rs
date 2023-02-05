@@ -1,5 +1,17 @@
 use crate::types::MalType;
 
+fn print_list(v: Vec<MalType>, begin: &str, end: &str, print_readably: bool) -> String {
+    vec![
+        begin.to_string(),
+        v.into_iter()
+            .map(|s| pr_str(s, print_readably))
+            .reduce(|acc, e| format!("{} {}", acc, e))
+            .unwrap_or("".to_string()),
+        end.to_string(),
+    ]
+    .join("")
+}
+
 pub fn pr_str(t: MalType, print_readably: bool) -> String {
     // println!("pr_str {:?}", t);
     let replace_fn = |s: String| {
@@ -19,15 +31,8 @@ pub fn pr_str(t: MalType, print_readably: bool) -> String {
             "\"".to_string(),
         ]
         .join(""),
-        MalType::List(v) => vec![
-            "(".to_string(),
-            v.into_iter()
-                .map(|s| pr_str(s, print_readably))
-                .reduce(|acc, e| format!("{} {}", acc, e))
-                .unwrap_or("".to_string()),
-            ")".to_string(),
-        ]
-        .join(""),
+        MalType::List(v) => print_list(v, "(", ")", print_readably),
+        MalType::Vector(v) => print_list(v, "[", "]", print_readably),
         _ => "???".to_string(),
     }
 }
