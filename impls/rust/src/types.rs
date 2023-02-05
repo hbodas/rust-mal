@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Debug, Clone)]
 pub enum MalType {
     Nil,
@@ -6,4 +8,7 @@ pub enum MalType {
     Symbol(String),
     String(String),
     List(Vec<MalType>),
+    // Keyword(String),
+    // Vector(Vec<MalType>),
+    // HashMap(HashMap<MalType, MalType>),
 }

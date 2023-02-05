@@ -4,6 +4,16 @@ use regex::Regex;
 use std::fmt;
 
 type Token = String;
+const DEBUG: bool = false;
+
+macro_rules! dprintln {
+    () => {
+       if (DEBUG) {print!("\n")};
+    };
+    ($($arg:tt)*) => {{
+        if (DEBUG) {println!($($arg)*)};
+    }};
+}
 
 #[derive(Debug, Clone)]
 pub struct Reader {
@@ -14,19 +24,31 @@ pub struct Reader {
 #[derive(Debug, Clone)]
 pub enum ReaderError {
     EOFError,
+    _NoTokens,
 }
 
 impl fmt::Display for ReaderError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ReaderError: reached EOF")
+        match self {
+            ReaderError::EOFError => write!(f, "ReaderError: reached EOF"),
+            _ => panic!("how did you get here"),
+        }
     }
 }
 
+// (S1 DEF) TODO: parens matching
+// (S1 DEF) TODO: reader macros
+// (S1 DEF) TODO: more types: keyword, hashmap, vector
+
 impl Reader {
-    fn new(tokens: Vec<Token>) -> Self {
-        Reader {
-            tokens,
-            position: 0,
+    fn new(tokens: Vec<Token>) -> Result<Self, ReaderError> {
+        if tokens.len() == 0 {
+            Err(ReaderError::_NoTokens)
+        } else {
+            Ok(Reader {
+                tokens,
+                position: 0,
+            })
         }
     }
 
@@ -41,7 +63,7 @@ impl Reader {
     }
 
     fn peek(&self) -> Result<Token, ReaderError> {
-        // println!("{:?} , {:?}", self.tokens, self.position);
+        dprintln!("peek {:?} , {:?}", self.tokens, self.position);
         if self.tokens.len() == self.position {
             Err(ReaderError::EOFError)
         } else {
@@ -50,7 +72,7 @@ impl Reader {
     }
 
     fn read_form(&mut self) -> Result<Option<MalType>, ReaderError> {
-        // println!("read_form {:?}", self);
+        dprintln!("read_form {:?}", self);
         let peeked: &str = &self.peek()?;
         match peeked {
             "(" => Ok(Some(MalType::List(self.read_list()?))),
@@ -62,28 +84,42 @@ impl Reader {
     }
 
     fn read_list(&mut self) -> Result<Vec<MalType>, ReaderError> {
-        // println!("read_list {:?}", self);
+        dprintln!("read_list {:?}", self);
         self.next()?;
         let mut ret = Vec::new();
         while let Some(t) = self.read_form()? {
             ret.push(t);
         }
-        // println!("{:?}", ret);
+        dprintln!("{:?}", ret);
         Ok(ret)
     }
 
     fn read_atom(&mut self) -> Result<Option<MalType>, ReaderError> {
-        // println!("read_atom {:?}", self);
+        dprintln!("read_atom {:?}", self);
         let token = self.next()?;
-        // println!("token {token}");
 
         let number_re = Regex::new(r"^[1-9][0-9]*$").unwrap();
+        let string_re = Regex::new(r#"^"(.*)"$"#).unwrap();
 
-        // TODO: nil, true, false and strings
         if token == *")" {
             Ok(None) // this option is passed up to terminate read_list
+        } else if token == *"nil" {
+            Ok(Some(MalType::Nil))
+        } else if token == *"true" {
+            Ok(Some(MalType::Bool(true)))
+        } else if token == *"false" {
+            Ok(Some(MalType::Bool(false)))
         } else if number_re.is_match(&token) {
             Ok(Some(MalType::Int(token.parse::<i32>().unwrap())))
+        } else if string_re.is_match(&token) {
+            let string_capture = string_re.captures(&token).unwrap().get(1).unwrap().as_str();
+            Ok(Some(MalType::String(
+                string_capture
+                    .replace("\\\"", "\"")
+                    .replace("\\n", "\n")
+                    .replace("\\\\", "\\")
+                    .to_string(),
+            )))
         } else {
             Ok(Some(MalType::Symbol(token)))
         }
@@ -91,7 +127,8 @@ impl Reader {
 }
 
 pub fn read_str(s: String) -> Result<MalType, ReaderError> {
-    let mut r = Reader::new(tokenize(s));
+    dprintln!("read_str {}", s);
+    let mut r = Reader::new(tokenize(s))?;
     match r.read_form() {
         Ok(t) => Ok(t.unwrap()),
         Err(e) => Err(e),
@@ -99,22 +136,25 @@ pub fn read_str(s: String) -> Result<MalType, ReaderError> {
 }
 
 fn tokenize(s: String) -> Vec<Token> {
+    dprintln!("tokenize {}", s);
     let mut tokens: Vec<String> = Vec::new();
     let re = Regex::new(r#"[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)"#)
         .unwrap();
+    let comment_re = Regex::new("^;").unwrap();
 
     // skip the first element
     let captures_iter = re.captures_iter(&s);
     for y in captures_iter {
-        tokens.push(
-            y.get(1)
-                .expect("how did you get here?")
-                .as_str()
-                .to_string(),
-        );
+        let token = y
+            .get(1)
+            .expect("how did you get here?")
+            .as_str()
+            .to_string();
+        if !comment_re.is_match(&token) {
+            tokens.push(token);
+        }
     }
 
-    tokens.pop();
-    // println!("{:?}", tokens);
+    dprintln!("tokenize {:?}", tokens);
     tokens
 }
