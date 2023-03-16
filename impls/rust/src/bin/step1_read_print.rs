@@ -1,4 +1,4 @@
-use quux::{
+use mal::{
     printer::pr_str,
     reader::{read_str, ReaderError},
     types::MalType,

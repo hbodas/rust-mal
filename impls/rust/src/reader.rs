@@ -4,7 +4,7 @@ use regex::Regex;
 use std::fmt;
 
 type Token = String;
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 
 macro_rules! dprintln {
     () => {
@@ -33,7 +33,7 @@ pub enum ReaderError {
 impl fmt::Display for ReaderError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            _ => write!(f, "ReaderError: reached EOF"),
+            _ => write!(f, "ReplError: reached EOF"),
         }
     }
 }
@@ -99,8 +99,8 @@ impl Reader {
     }
 
     fn read_atom(&mut self) -> Result<MalType, ReaderError> {
-        dprintln!("read_atom {:?}", self);
         let token = self.next()?;
+        dprintln!("read_atom {:?}", token);
 
         let number_re = Regex::new(r"^[1-9][0-9]*$").unwrap();
         let string_re = Regex::new(r#"^"(.*)"$"#).unwrap();
