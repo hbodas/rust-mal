@@ -10,7 +10,7 @@ pub enum MalType {
     List(Vec<MalType>),
     // Keyword(String),
     Vector(Vec<MalType>),
-    // HashMap(HashMap<MalType, MalType>),
+    // Map(HashMap<MalType, MalType>),
     Op(IntOp),
 }
 

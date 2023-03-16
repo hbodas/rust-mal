@@ -4,7 +4,7 @@ use regex::Regex;
 use std::fmt;
 
 type Token = String;
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 
 macro_rules! dprintln {
     () => {
@@ -102,7 +102,7 @@ impl Reader {
         let token = self.next()?;
         dprintln!("read_atom {:?}", token);
 
-        let number_re = Regex::new(r"^[1-9][0-9]*$").unwrap();
+        let number_re = Regex::new(r"^0|-?[1-9][0-9]*$").unwrap();
         let string_re = Regex::new(r#"^"(.*)"$"#).unwrap();
 
         if token == *")" {
@@ -151,12 +151,13 @@ fn tokenize(s: String) -> Vec<Token> {
     // skip the first element
     let captures_iter = re.captures_iter(&s);
     for y in captures_iter {
+        dprintln!("y = {:?}", &y);
         let token = y
             .get(1)
             .expect("how did you get here?")
             .as_str()
             .to_string();
-        if !comment_re.is_match(&token) {
+        if !comment_re.is_match(&token) && !token.is_empty() {
             tokens.push(token);
         }
     }

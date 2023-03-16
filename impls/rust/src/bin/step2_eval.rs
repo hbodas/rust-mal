@@ -38,8 +38,10 @@ impl From<String> for ReplError {
     }
 }
 
+// TODO: (S2 DEF) eval_ast on HashMap
+
 fn eval_ast(ast: MalType) -> Result<MalType, ReplError> {
-    println!("eval_ast {:?}", ast);
+    // println!("eval_ast {:?}", ast);
     use MalType::*;
     Ok(match ast {
         Symbol(s) => Op(s.parse()?),
@@ -49,15 +51,16 @@ fn eval_ast(ast: MalType) -> Result<MalType, ReplError> {
                 .map(|mtype: MalType| eval(mtype))
                 .collect::<Result<Vec<_>, _>>()?,
         ),
+        Vector(xs) => Vector(xs.into_iter().map(eval).collect::<Result<Vec<_>, _>>()?),
         _ => ast,
     })
 }
 
 fn eval(x: MalType) -> Result<MalType, ReplError> {
-    println!("eval {:?}", x);
+    // println!("eval {:?}", x);
     use MalType::*;
-    match &x {
-        List(xs) if xs.is_empty() => Ok(x),
+    match x {
+        List(ref xs) if xs.is_empty() => Ok(x),
         List(_) => match eval_ast(x)? {
             List(evaluated) if evaluated.len() == 3 => match evaluated[..] {
                 [Op(op), Int(a), Int(b)] => Ok(Int(op.exec(a, b))),
@@ -73,7 +76,7 @@ fn eval(x: MalType) -> Result<MalType, ReplError> {
             x => Err(ReplError(format!("expected List of MalTypes, got {:?}", x))),
         },
         _ => {
-            println!("x: {:?}", x);
+            // println!("x: {:?}", x);
             Ok(eval_ast(x)?)
         }
     }
