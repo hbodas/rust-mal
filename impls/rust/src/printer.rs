@@ -12,12 +12,13 @@ fn print_list(v: Vec<MalType>, begin: &str, end: &str, print_readably: bool) -> 
     .join("")
 }
 
+
 pub fn pr_str(t: MalType, print_readably: bool) -> String {
     // println!("pr_str {:?}", t);
     let replace_fn = |s: String| {
-        s.replace("\\", "\\\\")
-            .replace("\n", "\\n")
-            .replace("\"", "\\\"")
+        s.replace('\\', "\\\\")
+            .replace('\n', "\\n")
+            .replace('\"', "\\\"")
     };
 
     match t {

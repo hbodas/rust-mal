@@ -1,5 +1,7 @@
 // use std::collections::HashMap;
 
+use std::str::FromStr;
+
 #[derive(Debug, Clone)]
 pub enum MalType {
     Nil,
@@ -14,7 +16,7 @@ pub enum MalType {
     Op(IntOp),
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Clone, Debug)]
 pub enum IntOp {
     Plus,
     Minus,
@@ -22,20 +24,9 @@ pub enum IntOp {
     Div,
 }
 
-impl IntOp {
-    pub fn exec(self, a: i32, b: i32) -> i32 {
-        use IntOp::*;
-        match self {
-            Plus => a + b,
-            Minus => a - b,
-            Times => a * b,
-            Div => a / b,
-        }
-    }
-}
-
-impl std::str::FromStr for IntOp {
+impl FromStr for IntOp {
     type Err = String;
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use IntOp::*;
         match s {
@@ -43,7 +34,7 @@ impl std::str::FromStr for IntOp {
             "-" => Ok(Minus),
             "*" => Ok(Times),
             "/" => Ok(Div),
-            _ => Err("bad IntOp".to_string()),
+            _ => Err(format!("bad IntOp")),
         }
     }
 }

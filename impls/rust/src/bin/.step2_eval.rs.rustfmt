@@ -34,7 +34,7 @@ impl std::fmt::Display for ReplError {
 
 impl From<String> for ReplError {
     fn from(s: String) -> ReplError {
-        ReplError(s)
+        ReplError(s.clone())
     }
 }
 
@@ -44,10 +44,11 @@ fn eval_ast(ast: MalType) -> Result<MalType, ReplError> {
     // println!("eval_ast {:?}", ast);
     use MalType::*;
     Ok(match ast {
+        Symbol(s) => Op(s.parse()?),
         List(maltypes) => List(
             maltypes
                 .into_iter()
-                .map(eval)
+                .map(|mtype: MalType| eval(mtype))
                 .collect::<Result<Vec<_>, _>>()?,
         ),
         Vector(xs) => Vector(xs.into_iter().map(eval).collect::<Result<Vec<_>, _>>()?),
@@ -62,15 +63,9 @@ fn eval(x: MalType) -> Result<MalType, ReplError> {
         List(ref xs) if xs.is_empty() => Ok(x),
         List(_) => match eval_ast(x)? {
             List(evaluated) if evaluated.len() == 3 => match evaluated[..] {
-                [Symbol(ref op), Int(a), Int(b)] => match op.as_str() {
-                    "+" => Ok(Int(a + b)),
-                    "-" => Ok(Int(a - b)),
-                    "*" => Ok(Int(a * b)),
-                    "/" => Ok(Int(a / b)),
-                    _ => Err(ReplError(format!("could not find symbol {op}"))),
-                },
+                [Op(op), Int(a), Int(b)] => Ok(Int(op.exec(a, b))),
                 _ => Err(ReplError(format!(
-                    "expected [ <Symbol>, <Int>, <Int> ], got {:?}",
+                    "expected [ <Op>, <Int>, <Int> ], got {:?}",
                     evaluated
                 ))),
             },
@@ -129,7 +124,7 @@ fn main() {
         print!("user> ");
         if let Err(e) = stdout().flush() {
             println!("Something bad happened: {e}");
-            exit(1);
+            exit(1)
         }
 
         match stdin().read_line(&mut input) {
